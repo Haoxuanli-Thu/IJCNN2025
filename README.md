@@ -1,1 +1,1 @@
-The overall project code will be uploaded later
+The training code and instruction will be uploaded later

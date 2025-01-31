@@ -57,7 +57,7 @@ class MLK(nn.Module):
         self.att_conv1 = nn.Conv3d(dim, dim, kernel_size=3, stride=1, padding=1, groups=dim)
         self.att_conv2 = nn.Conv3d(dim, dim, kernel_size=5, stride=1, padding=2, groups=dim)
         self.att_conv3 = nn.Conv3d(dim, dim, kernel_size=7, stride=1, padding=3, groups=dim)
-        self.skf = MSABlock(dim,height=3)
+        self.skf = MSDABlock(dim,height=3)
 
 
     def forward(self, x):   
@@ -84,9 +84,9 @@ class AdaptiveMeanAndStdPool3d(nn.Module):
         return mean,std
     
     
-class MSABlock(nn.Module):
+class MSDABlock(nn.Module):
     def __init__(self, channel,height=2,kernel_sizes=[3, 5, 7]):
-        super(MSABlock, self).__init__()
+        super(MSDABlock, self).__init__()
         
         self.height = height
         self.kernel_sizes = kernel_sizes
@@ -460,7 +460,6 @@ class BFF(nn.Module):
             deeper_feat = fused_features[-1]
             current_feat = features[i]
             
-            # 上采样
             if self.use_deconv:
                 deeper_feat = self.upsample_layers[i](deeper_feat)
             else:
@@ -479,7 +478,7 @@ class BFF(nn.Module):
         return fused_features[::-1]  # 
 
 
-class MDBUNet(nn.Module):
+class DBFUNET(nn.Module):
     def __init__(
         self,
         in_channels,
@@ -526,7 +525,6 @@ class MDBUNet(nn.Module):
                     drop_path_rate=drop_path_rate_list[i],
                 ),
             )
-        # 创建解码器层
         for i in range(self.depth):
             self.decoders.append(
                 Up(
@@ -557,7 +555,6 @@ class MDBUNet(nn.Module):
         encoder_features = []
         decoder_features = [] 
 
-        # 编码过程
         for encoder in self.encoders:
             x = encoder(x)
             encoder_features.append(x)
@@ -585,14 +582,13 @@ class MDBUNet(nn.Module):
 
 
 if __name__ == "__main__":
-    model = MDBUNet(1, 2).to("cuda:6")
+    model = DBFUNET(1, 2).to("cuda:6")
     # x = torch.randn(2, 1, 128, 128, 128).to("cuda:6")
     # y = model(x)
     # print(y.shape)
     # import time
     # time.sleep(10000)
     from ptflops import get_model_complexity_info
-    # 使用Ptflops计算参数量和FLOPs
     macs, params = get_model_complexity_info(model, (1,128, 128, 128), as_strings=True, print_per_layer_stat=True, verbose=True)
 
     print(f'Computational complexity: {macs}')

@@ -117,19 +117,17 @@ class MSDABlock(nn.Module):
         out = self.fusion_conv(in_feats * attn)
         return out + self.fusion_res(in_feats)
 
-class MLKModule(nn.Module):
+class MSDAModule(nn.Module):
     def __init__(self, dim):
         super().__init__()
 
         self.proj_1 = nn.Conv3d(dim, dim, 1)
-        self.act = nn.GELU()
         self.spatial_gating_unit = MLK(dim)
         self.proj_2 = nn.Conv3d(dim, dim, 1)
 
     def forward(self, x):
         shortcut = x.clone()
         x = self.proj_1(x)
-        x = self.act(x)
         x = self.spatial_gating_unit(x)
         x = self.proj_2(x)
         x = x + shortcut
@@ -159,7 +157,7 @@ class MLKBlock(nn.Module):
     def __init__(self, dim,output_dim, drop_path=0.):
         super().__init__()
         self.norm_layer = nn.LayerNorm(dim, eps=1e-6)
-        self.attn = MLKModule(dim)
+        self.attn = MSDAModule(dim)
         self.mlp = Mlp(dim)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         layer_scale_init_value = 1e-6         
